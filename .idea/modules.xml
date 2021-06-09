@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/harespark.iml" filepath="$PROJECT_DIR$/.idea/modules/harespark.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/hare-spark.iml" filepath="$PROJECT_DIR$/.idea/modules/hare-spark.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/harespark-build.iml" filepath="$PROJECT_DIR$/.idea/modules/harespark-build.iml" />
     </modules>
   </component>
