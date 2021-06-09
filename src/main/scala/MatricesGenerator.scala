@@ -54,11 +54,24 @@ object MatricesGenerator {
 
     println("Saved nodes and triples")
 
-    val total_edges = triples.flatMap { f => Array((f, f.getSubject), (f, f.getPredicate), (f, f.getObject)) }
+    val total_edges = triples.flatMap { f =>
+      {
+        val fStr = f.toString
+        Array(
+          (fStr, f.getSubject.toString),
+          (fStr, f.getPredicate.toString),
+          (fStr, f.getObject.toString)
+        )
+      }
+    }
     val final_matrix = total_edges
-      .join(triplesWithIndex) // (triple, (sub_pred_obj, index_t))
+      .join(
+        triplesWithIndex.map[(String, Long)](f => (f._1.toString, f._2))
+      ) // (triple, (sub_pred_obj, index_t))
       .map(_._2) // (sub, index_t) or (pred, index_t) or (obj, index_t)
-      .join(entitiesWithIndex) // (sub_pred_obj, (index_t, index_e))
+      .join(
+        entitiesWithIndex.map[(String, Long)](f => (f._1.toString, f._2))
+      ) // (sub_pred_obj, (index_t, index_e))
       .map(_._2) // (index_t, index_e)
       .persist(StorageLevel.MEMORY_AND_DISK_SER)
 
