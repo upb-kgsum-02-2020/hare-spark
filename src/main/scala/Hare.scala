@@ -174,7 +174,8 @@ object Hare {
     rdd.sortBy(f => f._2, ascending = false).top(10000)
   }
 
-  def matrixEntryToTuple(me: MatrixEntry) = (me.i, me.value)
-  def extractAndSwitch[T](x: (Long, (Double, T))) =  (x._2._2, x._2._1)
+  def matrixEntryToTuple(me: MatrixEntry): (Long, Double) = (me.i, me.value)
+  def extractAndSwitch[T](x: (Long, (Double, T))): (T, Double) =
+    (x._2._2, x._2._1)
 
 }
