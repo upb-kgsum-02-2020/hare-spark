@@ -43,22 +43,22 @@ object MatricesGenerator {
     val predicates = triples.map(_.getPredicate)
     val objects = triples.map(_.getObject)
 
-    val triplesWithId = triples.distinct().zipWithIndex()
-    val entitiesWithId = subjects.union(predicates).union(objects).distinct().zipWithIndex()
+    val triplesWithIndex = triples.distinct().zipWithIndex()
+    val entitiesWithIndex = subjects.union(predicates).union(objects).distinct().zipWithIndex()
 
     println("Zipped triples and entities")
 
     val switchPlacesTuple = (x: (Any, Any)) => (x._2, x._1)
-    triplesWithId.map(switchPlacesTuple).saveAsObjectFile(s"$entities_dest/triples")
-    entitiesWithId.map(switchPlacesTuple).saveAsObjectFile(s"$entities_dest/entities")
+    triplesWithIndex.map(switchPlacesTuple).saveAsObjectFile(s"$entities_dest/triples")
+    entitiesWithIndex.map(switchPlacesTuple).saveAsObjectFile(s"$entities_dest/entities")
 
     println("Saved nodes and triples")
 
     val total_edges = triples.flatMap { f => Array((f, f.getSubject), (f, f.getPredicate), (f, f.getObject)) }
     val final_matrix = total_edges
-      .join(triplesWithId) // (triple, (sub_pred_obj, index_t))
+      .join(triplesWithIndex) // (triple, (sub_pred_obj, index_t))
       .map(_._2) // (sub, index_t) or (pred, index_t) or (obj, index_t)
-      .join(entitiesWithId) // (sub_pred_obj, (index_t, index_e))
+      .join(entitiesWithIndex) // (sub_pred_obj, (index_t, index_e))
       .map(_._2) // (index_t, index_e)
       .persist(StorageLevel.MEMORY_AND_DISK_SER)
 

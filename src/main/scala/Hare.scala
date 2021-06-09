@@ -53,8 +53,8 @@ object Hare {
 
     val t1 = System.currentTimeMillis()
 
-    val triplesWithId: RDD[(Long, Triple)] = sc.objectFile(triples_src)
-    val entitiesWithId: RDD[(Long, Node)] = sc.objectFile(entities_src)
+    val triplesWithIndex: RDD[(Long, Triple)] = sc.objectFile(triples_src)
+    val entitiesWithIndex: RDD[(Long, Node)] = sc.objectFile(entities_src)
 
     // transition matrix P(N)
     val p_n = MatrixUtils.coordinateMatrixMultiply(f, w)
@@ -117,7 +117,7 @@ object Hare {
     val (s_n_mean, s_n) = aboveMean[Node](s_n_final
       .entries
       .map(matrixEntryToTuple)
-      .join(entitiesWithId)
+      .join(entitiesWithIndex)
       .map(extractAndSwitch[Node]))
 
     s_n.repartition(1).saveAsTextFile(s_n_destWithProbs)
@@ -125,7 +125,7 @@ object Hare {
     val (s_t_mean, s_t) = aboveMean[Triple](s_t_final
       .entries
       .map(matrixEntryToTuple)
-      .join(triplesWithId)
+      .join(triplesWithIndex)
       .map(extractAndSwitch[Triple]))
 
     s_t.repartition(1).saveAsTextFile(s_t_destWithProbs)
