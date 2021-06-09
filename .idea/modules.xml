@@ -3,7 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/hare-spark.iml" filepath="$PROJECT_DIR$/.idea/modules/hare-spark.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/harespark-build.iml" filepath="$PROJECT_DIR$/.idea/modules/harespark-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/hare-spark-build.iml" filepath="$PROJECT_DIR$/.idea/modules/hare-spark-build.iml" />
     </modules>
   </component>
 </project>

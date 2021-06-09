@@ -1,4 +1,4 @@
-name := "harespark"
+name := "hare-spark"
 
 version := "0.1"
 
