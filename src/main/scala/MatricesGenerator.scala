@@ -10,7 +10,6 @@ import scala.collection.mutable.ListBuffer
 
 object MatricesGenerator {
 
-
   var sourcePath = ""
   var w_dest = "/matrices/w"
   var f_dest = "/matrices/f"
@@ -18,7 +17,6 @@ object MatricesGenerator {
   var edges_resources_dest = "/matrices/edges_resources"
   var statistics_dest = "/statistics"
   var entities_dest = "/entities"
-
 
   def main(args: Array[String]): Unit = {
 
@@ -44,13 +42,18 @@ object MatricesGenerator {
     val objects = triples.map(_.getObject)
 
     val triplesWithIndex = triples.distinct().zipWithIndex()
-    val entitiesWithIndex = subjects.union(predicates).union(objects).distinct().zipWithIndex()
+    val entitiesWithIndex =
+      subjects.union(predicates).union(objects).distinct().zipWithIndex()
 
     println("Zipped triples and entities")
 
     val switchPlacesTuple = (x: (Any, Any)) => (x._2, x._1)
-    triplesWithIndex.map(switchPlacesTuple).saveAsObjectFile(s"$entities_dest/triples")
-    entitiesWithIndex.map(switchPlacesTuple).saveAsObjectFile(s"$entities_dest/entities")
+    triplesWithIndex
+      .map(switchPlacesTuple)
+      .saveAsObjectFile(s"$entities_dest/triples")
+    entitiesWithIndex
+      .map(switchPlacesTuple)
+      .saveAsObjectFile(s"$entities_dest/entities")
 
     println("Saved nodes and triples")
 
@@ -86,11 +89,15 @@ object MatricesGenerator {
     val t2 = System.currentTimeMillis()
 
     val w = map_edges_triples
-      .flatMap(x => x._2.map(v => MatrixEntry(v._1, v._2, 1.0 / x._2.size.toDouble)))
+      .flatMap(x =>
+        x._2.map(v => MatrixEntry(v._1, v._2, 1.0 / x._2.size.toDouble))
+      )
       .filter(f => f != null)
 
     val f = map_edges_resources
-      .flatMap(x => x._2.map(v => MatrixEntry(v._2, v._1, 1.0 / x._2.size.toDouble)))
+      .flatMap(x =>
+        x._2.map(v => MatrixEntry(v._2, v._1, 1.0 / x._2.size.toDouble))
+      )
       .filter(f => f != null)
 
     println("Constructed matrices")
@@ -104,7 +111,6 @@ object MatricesGenerator {
     f.map(toReadable).saveAsTextFile(s"${f_dest}_readable")
 
     println("Saved matrices")
-
 
     val matrixTime = (System.currentTimeMillis() - t2) / 1000
 

@@ -11,9 +11,7 @@ import org.apache.spark.sql.SparkSession
 import java.math.BigDecimal
 import scala.collection.mutable.ListBuffer
 
-
 object Hare {
-
 
   val df = 0.85
 
@@ -28,11 +26,12 @@ object Hare {
 
   def main(args: Array[String]): Unit = {
 
-
     val spark = SparkSession
       .builder()
       //      .master("local[*]")
-      .appName("HareScalaSpark-" + args(0).substring(args(0).lastIndexOf("/") + 1))
+      .appName(
+        "HareScalaSpark-" + args(0).substring(args(0).lastIndexOf("/") + 1)
+      )
       .getOrCreate()
 
     w_path = args(0) + w_path
@@ -62,7 +61,9 @@ object Hare {
     val s_n_v = f.numRows()
 
     // S_0 initial entry value
-    val s_i = f.numCols().toDouble / (w.numCols().toDouble * (f.numCols().toDouble + w.numCols().toDouble))
+    val s_i = f.numCols().toDouble / (w
+      .numCols()
+      .toDouble * (f.numCols().toDouble + w.numCols().toDouble))
 
     // sequence of entities
     val t = sc.parallelize(0 until f.numRows().toInt)
@@ -89,7 +90,10 @@ object Hare {
     var iter = 0
 
     val a = MatrixUtils.multiplyMatrixByNumber(p_n, df).transpose()
-    val b = MatrixUtils.divideMatrixByNumber(MatrixUtils.multiplyMatrixByNumber(matrix_i, 1 - df), s_n_v.toDouble)
+    val b = MatrixUtils.divideMatrixByNumber(
+      MatrixUtils.multiplyMatrixByNumber(matrix_i, 1 - df),
+      s_n_v.toDouble
+    )
 
     val iter_list = new ListBuffer[Long]
 
@@ -100,10 +104,16 @@ object Hare {
 
       s_n_final = MatrixUtils.coordinateMatrixSum(
         MatrixUtils.coordinateMatrixMultiply(a, s_n_previous),
-        b)
+        b
+      )
 
-      distance = new BigDecimal(DistanceUtils
-        .euclideanDistance(s_n_final.entries.map(f => f.value), s_n_previous.entries.map(f => f.value)))
+      distance = new BigDecimal(
+        DistanceUtils
+          .euclideanDistance(
+            s_n_final.entries.map(f => f.value),
+            s_n_previous.entries.map(f => f.value)
+          )
+      )
 
       iter = iter + 1
 
@@ -114,19 +124,21 @@ object Hare {
     System.gc()
     s_t_final = MatrixUtils.coordinateMatrixMultiply(f.transpose(), s_n_final)
 
-    val (s_n_mean, s_n) = aboveMean[Node](s_n_final
-      .entries
-      .map(matrixEntryToTuple)
-      .join(entitiesWithIndex)
-      .map(extractAndSwitch[Node]))
+    val (s_n_mean, s_n) = aboveMean[Node](
+      s_n_final.entries
+        .map(matrixEntryToTuple)
+        .join(entitiesWithIndex)
+        .map(extractAndSwitch[Node])
+    )
 
     s_n.repartition(1).saveAsTextFile(s_n_destWithProbs)
 
-    val (s_t_mean, s_t) = aboveMean[Triple](s_t_final
-      .entries
-      .map(matrixEntryToTuple)
-      .join(triplesWithIndex)
-      .map(extractAndSwitch[Triple]))
+    val (s_t_mean, s_t) = aboveMean[Triple](
+      s_t_final.entries
+        .map(matrixEntryToTuple)
+        .join(triplesWithIndex)
+        .map(extractAndSwitch[Triple])
+    )
 
     s_t.repartition(1).saveAsTextFile(s_t_destWithProbs)
     s_t.map(_._1).repartition(1).saveAsNTriplesFile(s_t_dest)
