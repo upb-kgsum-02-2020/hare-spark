@@ -19,7 +19,10 @@ object Hare {
   var f_path = "/matrices/f"
   var s_n_destWithProbs = "/results_hare/s_n-with-probs"
   var s_t_destWithProbs = "/results_hare/s_t-with-probs"
-  var s_t_dest = "/results_hare/s_t"
+  var s_t_dest = "/results_hare/triples/s_t"
+  var s_n_dest = "/results_hare/triples/s_n"
+  var s_t_dist = "/results_hare/dist/s_t"
+  var s_n_dist = "/results_hare/dist/s_n"
   var statistics_dest = "/hare_statistics"
   var triples_src = "/entities/triples"
   var entities_src = "/entities/entities"
@@ -28,7 +31,6 @@ object Hare {
 
     val spark = SparkSession
       .builder()
-      //      .master("local[*]")
       .appName(
         "HareScalaSpark-" + args(0).substring(args(0).lastIndexOf("/") + 1)
       )
@@ -38,8 +40,10 @@ object Hare {
     f_path = args(0) + f_path
     s_n_destWithProbs = args(0) + s_n_destWithProbs
     s_t_destWithProbs = args(0) + s_t_destWithProbs
-    //    s_n_dest = args(0) + s_n_dest
     s_t_dest = args(0) + s_t_dest
+    s_n_dest = args(0) + s_n_dest
+    s_t_dist = args(0) + s_t_dist
+    s_n_dist = args(0) + s_n_dist
     statistics_dest = args(0) + statistics_dest
     triples_src = args(0) + triples_src
     entities_src = args(0) + entities_src
@@ -124,6 +128,9 @@ object Hare {
     System.gc()
     s_t_final = MatrixUtils.coordinateMatrixMultiply(f.transpose(), s_n_final)
 
+    s_n_final.entries.saveAsObjectFile(s_n_dist)
+    s_t_final.entries.saveAsObjectFile(s_t_dist)
+
     val (s_n_mean, s_n) = aboveMean[Node](
       s_n_final.entries
         .map(matrixEntryToTuple)
@@ -131,7 +138,20 @@ object Hare {
         .map(extractAndSwitch[Node])
     )
 
-    s_n.repartition(1).saveAsTextFile(s_n_destWithProbs)
+    val nodes = s_n.map(f => (f._1.hashCode(), f._1))
+    val nodeTriples = triplesWithIndex
+      .map(_._2)
+      .flatMap(f =>
+        Array(
+          (f.getSubject.hashCode, f),
+          (f.getPredicate.hashCode, f),
+          (f.getObject.hashCode, f)
+        )
+      )
+
+    nodes.join(nodeTriples).map(_._2._2).distinct().saveAsNTriplesFile(s_n_dest)
+
+    s_n.saveAsTextFile(s_n_destWithProbs)
 
     val (s_t_mean, s_t) = aboveMean[Triple](
       s_t_final.entries
@@ -140,8 +160,8 @@ object Hare {
         .map(extractAndSwitch[Triple])
     )
 
-    s_t.repartition(1).saveAsTextFile(s_t_destWithProbs)
-    s_t.map(_._1).repartition(1).saveAsNTriplesFile(s_t_dest)
+    s_t.saveAsTextFile(s_t_destWithProbs)
+    s_t.map(_._1).saveAsNTriplesFile(s_t_dest)
 
     val hareTime = (System.currentTimeMillis() - t2) / 1000
 
