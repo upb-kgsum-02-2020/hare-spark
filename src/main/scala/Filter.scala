@@ -26,7 +26,7 @@ object Filter {
     val spark = SparkSession
       .builder()
       .appName(
-        "Filter-" + args(0).substring(args(0).lastIndexOf("/") + 1)
+        s"Filter-${args(0)}-${args(1)}"
       )
       .getOrCreate()
 
@@ -54,7 +54,7 @@ object Filter {
       entries.map(_._2).reduce { case (a, b) => a + b } / entries.count()
 
     if (mode == "TRIPLES") {
-      filterEntries(args(1), mean, entries, triplesWithIndex, triplesWithIndex)
+      filterEntries(mean, entries, triplesWithIndex)
     } else {
       filterEntries(args(1), mean, entries, nodesWithIndex, triplesWithIndex)
     }
@@ -62,28 +62,35 @@ object Filter {
     spark.stop()
   }
 
-  def filterEntries[T](
-      mode: String,
+  def mapEntriesAboveMean[T](
       mean: Double,
       entries: RDD[(Long, Double)],
-      entriesWithIndex: RDD[(Long, T)],
-      triplesWithIndex: RDD[(Long, Triple)]
-  ): Unit = {
-    val entriesAboveMean = entries
+      entriesWithIndex: RDD[(Long, T)]
+  ): RDD[(T, Double)] =
+    entries
       .filter(_._2 > mean)
       .join(entriesWithIndex)
       .map(f => (f._2._2, f._2._1))
 
-    if (mode == "TRIPLES") {
-      entriesAboveMean
-        .map(_._1.asInstanceOf[Triple])
-        .saveAsNTriplesFile(triples)
-      return
-    }
+  def filterEntries(
+      mean: Double,
+      entries: RDD[(Long, Double)],
+      triplesWithIndex: RDD[(Long, Triple)]
+  ): Unit =
+    mapEntriesAboveMean(mean, entries, triplesWithIndex)
+      .map(_._1)
+      .saveAsNTriplesFile(triples)
 
-    val hashToNodePairs = entriesAboveMean.map(f =>
-      (f._1.asInstanceOf[Node].hashCode(), f._1.asInstanceOf[Node])
-    )
+  def filterEntries(
+      mode: String,
+      mean: Double,
+      entries: RDD[(Long, Double)],
+      nodesWithIndex: RDD[(Long, Node)],
+      triplesWithIndex: RDD[(Long, Triple)]
+  ): Unit = {
+    val entriesAboveMean = mapEntriesAboveMean(mean, entries, nodesWithIndex)
+
+    val hashToNodePairs = entriesAboveMean.map(f => (f._1.hashCode(), f._1))
     val nodeToTriplePairs = triplesWithIndex
       .map(_._2)
       .flatMap(f =>
@@ -103,7 +110,10 @@ object Filter {
               (f.getSubject.hashCode, f),
               (f.getObject.hashCode, f)
             )
-          case _ => throw IllegalArgumentException
+          case _ =>
+            throw new IllegalArgumentException(
+              "wrong mode, please use TRIPLES, NODES, PREDICATES, or NON_PREDICATES"
+            )
         }
       )
 
@@ -115,7 +125,10 @@ object Filter {
         case "NODES"          => nodes
         case "PREDICATES"     => predicates
         case "NON_PREDICATES" => nonPredicates
-        case _                => throw IllegalArgumentException
+        case _ =>
+          throw new IllegalArgumentException(
+            "wrong mode, please use TRIPLES, NODES, PREDICATES, or NON_PREDICATES"
+          )
       })
   }
 }
